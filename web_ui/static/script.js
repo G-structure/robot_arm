@@ -275,26 +275,17 @@ function updateRobotModel() {
 }
 
 function updateRobotStateFromFeedback(data) {
-    // Update robot state from actual robot feedback
-    if (data.b !== undefined) robotState.base = data.b;
-    if (data.s !== undefined) robotState.shoulder = data.s;
-    if (data.e !== undefined) robotState.elbow = data.e;
-    if (data.t !== undefined) robotState.hand = data.t;
-    // Update gripper if available in feedback
-    
-    // Update sliders to match actual robot state
-    const sliders = {
-        base: document.getElementById('angle-b-slider'),
-        shoulder: document.getElementById('angle-s-slider'),
-        elbow: document.getElementById('angle-e-slider'),
-        hand: document.getElementById('angle-h-slider'),
-    };
-    
-    Object.keys(sliders).forEach(joint => {
-        if (sliders[joint] && robotState[joint] !== undefined) {
-            sliders[joint].value = robotState[joint];
-        }
-    });
+    const RAD2DEG = 180 / Math.PI;
+    // Convert radian feedback to degrees
+    const radToDeg = (val) => val !== undefined ? (val * RAD2DEG) : undefined;
+
+    if (data.b !== undefined) robotState.base = radToDeg(data.b);
+    if (data.s !== undefined) robotState.shoulder = radToDeg(data.s);
+    if (data.e !== undefined) robotState.elbow = radToDeg(data.e);
+    if (data.t !== undefined) robotState.hand = radToDeg(data.t);
+
+    // Update sliders & feedback boxes
+    updateSliderValues();
     
     // Update 3D model
     updateRobotModel();
@@ -694,13 +685,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const setOffline = () => {
             if (cameraStatusEl) cameraStatusEl.innerHTML = '<span class="blink" style="color:#ff0000">●</span> OFFLINE';
         };
-        // If the image fails to load, retry periodically
+
         cameraFeed.addEventListener('error', () => {
             setOffline();
-            // Retry after 3 seconds
-            setTimeout(() => {
-                cameraFeed.src = `/video_feed?rand=${Date.now()}`;
-            }, 3000);
+            console.log('Camera feed error - manual refresh required');
         });
         // When it loads successfully, set status to LIVE
         cameraFeed.addEventListener('load', () => {

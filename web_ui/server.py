@@ -29,6 +29,9 @@ class CameraStream:
         self.camera = None
         self.lock = threading.Lock()
         self.frame = None
+        self.clients = set()
+        self.capture_thread = None
+        self.running = False
         
     def initialize_camera(self):
         """Initialize the camera"""
@@ -48,50 +51,97 @@ class CameraStream:
         except Exception as e:
             logger.error(f"Camera initialization error: {e}")
             return False
-    
-    def get_frame(self):
-        """Get the latest frame from camera"""
-        if self.camera is None:
-            self.initialize_camera()
 
-        if self.camera is None or not self.camera.isOpened():
-            return None
+    def start_capture(self):
+        """Start the background capture thread"""
+        if self.capture_thread is not None and self.capture_thread.is_alive():
+            return
             
-        ret, frame = self.camera.read()
-        if ret:
-            with self.lock:
-                self.frame = frame.copy()
-            return frame
-        return None
-    
-    def generate_frames(self):
-        """Generate frames for video streaming"""
-        while True:
-            frame = self.get_frame()
-            if frame is not None:
+        if not self.initialize_camera():
+            return
+            
+        self.running = True
+        self.capture_thread = threading.Thread(target=self._capture_frames)
+        self.capture_thread.daemon = True
+        self.capture_thread.start()
+        logger.info("Camera capture thread started")
+
+    def stop_capture(self):
+        """Stop the background capture thread"""
+        self.running = False
+        if self.capture_thread:
+            self.capture_thread.join(timeout=2)
+        if self.camera:
+            self.camera.release()
+        logger.info("Camera capture stopped")
+
+    def _capture_frames(self):
+        """Background thread to continuously capture frames"""
+        while self.running:
+            if self.camera is None or not self.camera.isOpened():
+                time.sleep(0.1)
+                continue
+                
+            ret, frame = self.camera.read()
+            if ret:
                 # Add timestamp and info overlay
                 timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
                 cv2.putText(frame, f"Robot Arm Camera - {timestamp}", 
                            (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                 
-                # Encode frame as JPEG
-                ret, buffer = cv2.imencode('.jpg', frame, 
-                                         [cv2.IMWRITE_JPEG_QUALITY, 85])
-                if ret:
-                    frame_bytes = buffer.tobytes()
-                    yield (b'--frame\r\n'
-                           b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+                with self.lock:
+                    self.frame = frame.copy()
             else:
-                # If camera fails, yield a black frame with error message
+                # Create error frame
                 error_frame = self.create_error_frame()
-                ret, buffer = cv2.imencode('.jpg', error_frame)
-                if ret:
-                    frame_bytes = buffer.tobytes()
-                    yield (b'--frame\r\n'
-                           b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-            
+                with self.lock:
+                    self.frame = error_frame
+                    
             time.sleep(0.033)  # ~30 FPS
-    
+
+    def add_client(self, client_id):
+        """Register a new client"""
+        with self.lock:
+            self.clients.add(client_id)
+            logger.info(f"Camera client added: {client_id} (total: {len(self.clients)})")
+            
+        # Start capture if this is the first client
+        if len(self.clients) == 1:
+            self.start_capture()
+
+    def remove_client(self, client_id):
+        """Unregister a client"""
+        with self.lock:
+            self.clients.discard(client_id)
+            logger.info(f"Camera client removed: {client_id} (total: {len(self.clients)})")
+            
+        # Stop capture if no clients remain
+        if len(self.clients) == 0:
+            self.stop_capture()
+
+    def get_frame(self):
+        """Get the latest frame (thread-safe)"""
+        with self.lock:
+            return self.frame.copy() if self.frame is not None else None
+
+    def generate_frames(self, client_id):
+        """Generate frames for a specific client"""
+        self.add_client(client_id)
+        try:
+            while client_id in self.clients:
+                frame = self.get_frame()
+                if frame is not None:
+                    # Encode frame as JPEG
+                    ret, buffer = cv2.imencode('.jpg', frame, 
+                                             [cv2.IMWRITE_JPEG_QUALITY, 85])
+                    if ret:
+                        frame_bytes = buffer.tobytes()
+                        yield (b'--frame\r\n'
+                               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+                time.sleep(0.033)  # ~30 FPS
+        finally:
+            self.remove_client(client_id)
+
     def create_error_frame(self):
         """Create an error frame when camera is not available"""
         frame = np.zeros((480, 640, 3), dtype=np.uint8)
@@ -101,8 +151,7 @@ class CameraStream:
     
     def cleanup(self):
         """Clean up camera resources"""
-        if self.camera:
-            self.camera.release()
+        self.stop_capture()
 
 # Global camera stream instance
 camera_stream = CameraStream()
@@ -150,7 +199,19 @@ def index():
 @app.route('/video_feed')
 def video_feed():
     """Video streaming route"""
-    return Response(camera_stream.generate_frames(),
+    client_ip = request.environ.get('REMOTE_ADDR', 'unknown')
+    logger.info(f"Video feed client connected: {client_ip}")
+    
+    def generate_with_cleanup():
+        try:
+            for frame in camera_stream.generate_frames(client_ip):
+                yield frame
+        except GeneratorExit:
+            logger.info(f"Video feed client disconnected: {client_ip}")
+        except Exception as e:
+            logger.error(f"Video feed error for client {client_ip}: {e}")
+    
+    return Response(generate_with_cleanup(),
                    mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/robot/command', methods=['POST'])
@@ -227,8 +288,9 @@ def main():
     except KeyboardInterrupt:
         logger.info("Shutting down...")
     finally:
+        # Clean up camera resources
         camera_stream.cleanup()
-        sdr_streamer.stop()
+        logger.info("Cleanup complete")
 
 if __name__ == '__main__':
     main() 
