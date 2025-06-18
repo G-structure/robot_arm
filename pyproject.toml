@@ -15,9 +15,10 @@ dependencies = [
     "requests==2.31.0",
     "urllib3==2.0.4",
     "flask==3.0.0",
-    "flask-sock==0.7.0",
     "opencv-python==4.11.0.86",
-    "numpy==2.0.2",
+    "numpy==1.26.4",
+    "flask-sock==0.7.0",
+    "scipy==1.11.4",
 ]
 
 [tool.setuptools.packages.find]

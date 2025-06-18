@@ -1,9 +1,7 @@
 // --- Global State ---
 let robotIP = '';
-
-// --- SDR / Waterfall ---
-let spectrum;
-let sdrSocket;
+let spectrum = null;
+let sdrSocket = null;
 
 // --- DOM Elements ---
 const feedbackBox = () => document.getElementById('feedback-box');
@@ -12,6 +10,98 @@ const cameraStatusDetail = () => document.getElementById('camera-status-detail')
 const robotConnection = () => document.getElementById('robot-connection');
 const lastCommand = () => document.getElementById('last-command');
 const lastResponse = () => document.getElementById('last-response');
+
+// --- SDR ---
+function initializeSDR() {
+    const waterfallCanvas = document.getElementById('waterfall');
+    if (!waterfallCanvas) return;
+
+    spectrum = new Spectrum('waterfall', {
+        spectrumPercent: 50,
+    });
+
+    connectSDRWebSocket();
+
+    document.getElementById('sdr-update-settings').addEventListener('click', updateSdrSettings);
+    document.getElementById('sdr-pause').addEventListener('click', () => spectrum.togglePaused());
+    document.getElementById('sdr-color').addEventListener('click', () => spectrum.toggleColor());
+    document.getElementById('sdr-max-hold').addEventListener('click', () => spectrum.toggleMaxHold());
+}
+
+function connectSDRWebSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const url = `${protocol}//${window.location.host}/sdr`;
+    sdrSocket = new WebSocket(url);
+
+    sdrSocket.onopen = () => {
+        console.log('SDR WebSocket connected.');
+        updateSdrStatus(); // Get initial settings
+    };
+
+    sdrSocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (spectrum) {
+            spectrum.addData(data);
+        }
+    };
+
+    sdrSocket.onclose = () => {
+        console.log('SDR WebSocket disconnected. Retrying in 3 seconds...');
+        setTimeout(connectSDRWebSocket, 3000);
+    };
+
+    sdrSocket.onerror = (error) => {
+        console.error('SDR WebSocket error:', error);
+    };
+}
+
+async function updateSdrSettings() {
+    const center_freq = parseFloat(document.getElementById('sdr-freq').value) * 1e6;
+    const sample_rate = parseFloat(document.getElementById('sdr-rate').value) * 1e6;
+    const rx_gain = parseInt(document.getElementById('sdr-gain').value, 10);
+    const fft_size = parseInt(document.getElementById('sdr-fft-size').value, 10);
+
+    const settings = {
+        center_freq,
+        sample_rate,
+        rx_gain,
+        fft_size,
+    };
+
+    try {
+        const response = await fetch('/sdr/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings)
+        });
+        const data = await response.json();
+        console.log('SDR settings updated:', data);
+        // Also update the spectrum display settings
+        spectrum.setCenterHz(center_freq);
+        spectrum.setSpanHz(sample_rate);
+    } catch (error) {
+        console.error("Error updating SDR settings:", error);
+    }
+}
+
+async function updateSdrStatus() {
+     try {
+        const response = await fetch('/sdr/status');
+        const data = await response.json();
+        if (data.is_streaming) {
+            document.getElementById('sdr-freq').value = data.center_freq / 1e6;
+            document.getElementById('sdr-rate').value = data.sample_rate / 1e6;
+            document.getElementById('sdr-gain').value = data.rx_gain;
+            document.getElementById('sdr-fft-size').value = data.fft_size;
+            if (spectrum) {
+                spectrum.setCenterHz(data.center_freq);
+                spectrum.setSpanHz(data.sample_rate);
+            }
+        }
+    } catch (error) {
+        console.error("Error getting SDR status:", error);
+    }
+}
 
 // --- Command Sending ---
 async function sendCommand(jsonCmd) {
@@ -121,11 +211,6 @@ function initializeEventListeners() {
         sendJsonBtn.addEventListener('click', sendRawJson);
     }
 
-    const sdrUpdateBtn = document.getElementById('sdr-update');
-    if (sdrUpdateBtn) {
-        sdrUpdateBtn.addEventListener('click', updateSdrConfig);
-    }
-
     if (jsonCommandInput()) {
         jsonCommandInput().addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -224,58 +309,11 @@ function initializeEventListeners() {
     }
 }
 
-function initializeWaterfall() {
-    const canvas = document.getElementById('waterfall');
-    if (!canvas) return;
-    
-    spectrum = new Spectrum(
-        'waterfall',
-        {
-            spectrumPercent: 20,
-            bandplan: null,
-            colormap: colormaps[0],
-            db_min: -120.0,
-            db_max: -20.0,
-            zoom: 1.0
-        }
-    );
-
-    connectSdrWebSocket();
-}
-
-function connectSdrWebSocket() {
-    const url = `ws://${window.location.host}/sdr`;
-    sdrSocket = new WebSocket(url);
-
-    sdrSocket.onopen = () => console.log("SDR WebSocket connected");
-    sdrSocket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (Array.isArray(data)) {
-            spectrum.addData(data);
-        } else {
-            console.log("SDR config updated:", data);
-        }
-    };
-    sdrSocket.onclose = () => {
-        console.log("SDR WebSocket disconnected. Reconnecting...");
-        setTimeout(connectSdrWebSocket, 3000);
-    };
-    sdrSocket.onerror = (error) => console.error("SDR WebSocket error:", error);
-}
-
-function updateSdrConfig() {
-    if (sdrSocket && sdrSocket.readyState === WebSocket.OPEN) {
-        const freq = document.getElementById('sdr-freq').value * 1e6;
-        const gain = document.getElementById('sdr-gain').value;
-        const rate = document.getElementById('sdr-rate').value * 1e6;
-        sdrSocket.send(JSON.stringify({ freq, gain, rate }));
-    }
-}
 
 // --- Page Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
     initializeEventListeners();
+    initializeSDR();
     updateStatus();
     setInterval(updateStatus, 2000); // Poll for status every 2 seconds
-    initializeWaterfall();
 }); 

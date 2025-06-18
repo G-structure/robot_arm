@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Robot Arm Camera and SDR Web UI
-Provides live camera stream, SDR waterfall, and robot arm control.
+Robot Arm Camera Web UI
+Provides live camera stream and control interface for the robot arm
 """
 
 import cv2
@@ -9,14 +9,13 @@ import json
 import time
 import threading
 from flask import Flask, Response, render_template, request, jsonify
-from flask_sock import Sock
 import requests
 import logging
 import numpy as np
 import os
-import SoapySDR
-from .sdr import device as sdr_device
-from .sdr import signal as sdr_signal
+from flask_sock import Sock
+
+from web_ui.sdr.stream import SDRStreamer
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -108,92 +107,8 @@ class CameraStream:
 # Global camera stream instance
 camera_stream = CameraStream()
 
-class SDRController:
-    def __init__(self, fft_size=1024, sample_rate=2.048e6):
-        self.sdr = None
-        self.stream = None
-        self.lock = threading.Lock()
-        self.is_streaming = False
-        self.fft_size = fft_size
-        self.sample_rate = sample_rate
-        self.center_freq = 100e6
-        self.gain = 30
-        self.sdr_thread = None
-
-    def initialize_sdr(self):
-        try:
-            args = "driver=hackrf"
-            self.sdr = sdr_device.setup_sdr_device(
-                device_args=args,
-                sample_rate=self.sample_rate,
-                center_freq=self.center_freq,
-                rx_gain=self.gain
-            )
-            self.stream = self.sdr.setupStream(SoapySDR.SOAPY_SDR_RX, SoapySDR.SOAPY_SDR_CF32)
-            self.sdr.activateStream(self.stream)
-            self.is_streaming = True
-            logger.info("SDR Initialized: HackRF")
-            return True
-        except Exception as e:
-            logger.error(f"SDR Initialization Error: {e}")
-            self.is_streaming = False
-            return False
-
-    def start_streaming(self, websocket):
-        if not self.is_streaming:
-            if not self.initialize_sdr():
-                return 
-
-        def stream_loop():
-            buffer = np.empty(self.fft_size, dtype=np.complex64)
-            while self.is_streaming:
-                try:
-                    sr = self.sdr.readStream(self.stream, [buffer], len(buffer), timeoutUs=int(1e6))
-                    if sr.ret > 0:
-                        psd = sdr_signal.compute_psd_db(buffer, self.fft_size)
-                        websocket.send(json.dumps(psd.tolist()))
-                    time.sleep(0.01)
-                except Exception as e:
-                    logger.error(f"SDR Streaming Error: {e}")
-                    self.is_streaming = False
-                    break
-            self.cleanup()
-
-        self.sdr_thread = threading.Thread(target=stream_loop)
-        self.sdr_thread.start()
-
-    def stop_streaming(self):
-        with self.lock:
-            self.is_streaming = False
-        if self.sdr_thread:
-            self.sdr_thread.join()
-
-    def set_config(self, config):
-        with self.lock:
-            if 'freq' in config:
-                self.center_freq = float(config['freq'])
-                self.sdr.setFrequency(SoapySDR.SOAPY_SDR_RX, 0, self.center_freq)
-            if 'gain' in config:
-                self.gain = float(config['gain'])
-                self.sdr.setGain(SoapySDR.SOAPY_SDR_RX, 0, self.gain)
-            if 'rate' in config:
-                self.sample_rate = float(config['rate'])
-                self.sdr.setSampleRate(SoapySDR.SOAPY_SDR_RX, 0, self.sample_rate)
-        return self.get_status()
-
-    def get_status(self):
-        return {
-            "streaming": self.is_streaming,
-            "center_freq": self.center_freq,
-            "sample_rate": self.sample_rate,
-            "gain": self.gain,
-        }
-
-    def cleanup(self):
-        if self.stream:
-            self.sdr.deactivateStream(self.stream)
-            self.sdr.closeStream(self.stream)
-        logger.info("SDR Stream closed.")
+# Global SDR streamer instance
+sdr_streamer = SDRStreamer(app_logger=logger)
 
 class RobotController:
     def __init__(self):
@@ -226,7 +141,6 @@ class RobotController:
 
 # Global robot controller
 robot_controller = RobotController()
-sdr_controller = SDRController()
 
 @app.route('/')
 def index():
@@ -238,23 +152,6 @@ def video_feed():
     """Video streaming route"""
     return Response(camera_stream.generate_frames(),
                    mimetype='multipart/x-mixed-replace; boundary=frame')
-
-@sock.route('/sdr')
-def sdr_feed(ws):
-    logger.info("SDR WebSocket connection established.")
-    sdr_controller.start_streaming(ws)
-    while ws.connected:
-        message = ws.receive()
-        if message:
-            try:
-                config = json.loads(message)
-                sdr_controller.set_config(config)
-                ws.send(json.dumps({"status": "updated", "config": sdr_controller.get_status()}))
-            except json.JSONDecodeError:
-                ws.send(json.dumps({"error": "Invalid JSON"}))
-        time.sleep(0.1)
-    sdr_controller.stop_streaming()
-    logger.info("SDR WebSocket connection closed.")
 
 @app.route('/robot/command', methods=['POST'])
 def robot_command():
@@ -271,11 +168,6 @@ def robot_status():
     """Get robot status"""
     return jsonify(robot_controller.get_status())
 
-@app.route('/sdr/status')
-def sdr_status():
-    """Get SDR status"""
-    return jsonify(sdr_controller.get_status())
-
 @app.route('/camera/info')
 def camera_info():
     """Get camera information"""
@@ -284,6 +176,48 @@ def camera_info():
         "resolution": "640x480",
         "fps": 30
     })
+
+@sock.route('/sdr')
+def sdr_socket(ws):
+    """SDR data websocket."""
+    logger.info("SDR WebSocket client connected.")
+    sdr_streamer.add_client(ws)
+    try:
+        while True:
+            # Keep the connection alive. Data is broadcasted from the streamer thread.
+            # We can receive control messages here if we want.
+            message = ws.receive()
+            if message:
+                try:
+                    # TODO: Implement control messages from client
+                    data = json.loads(message)
+                    logger.info(f"Received SDR control message: {data}")
+                except json.JSONDecodeError:
+                    logger.warning(f"Invalid JSON received from SDR client: {message}")
+
+    except Exception as e:
+        logger.info(f"SDR WebSocket client disconnected: {e}")
+    finally:
+        sdr_streamer.remove_client(ws)
+        logger.info("SDR WebSocket client removed.")
+
+@app.route('/sdr/settings', methods=['GET', 'POST'])
+def sdr_settings():
+    """Get or update SDR settings."""
+    if request.method == 'POST':
+        settings = request.get_json()
+        if not settings:
+            return jsonify({"error": "No settings provided"}), 400
+        logger.info(f"Updating SDR settings: {settings}")
+        sdr_streamer.update_settings(settings)
+        return jsonify({"success": True, "message": "Settings updated."})
+    else:
+        return jsonify(sdr_streamer.get_status())
+
+@app.route('/sdr/status')
+def sdr_status():
+    """Get SDR status."""
+    return jsonify(sdr_streamer.get_status())
 
 def main():
     """Main entry point to run the Flask application."""
@@ -294,7 +228,7 @@ def main():
         logger.info("Shutting down...")
     finally:
         camera_stream.cleanup()
-        sdr_controller.cleanup()
+        sdr_streamer.stop()
 
 if __name__ == '__main__':
     main() 

@@ -35,15 +35,9 @@ body {
 
 .main-content {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1fr 400px;
     gap: 20px;
     margin-bottom: 20px;
-}
-
-.left-column {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
 }
 
 .camera-section {
@@ -82,7 +76,6 @@ body {
     padding: 5px 10px;
     border-radius: 5px;
     font-size: 0.9em;
-    display: none;
 }
 
 .control-panel {
@@ -364,14 +357,16 @@ textarea#json-command {
     padding: 20px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
     margin-top: 20px;
-}
+} 
 
+/* SDR Styles */
 .sdr-section {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     border-radius: 15px;
     padding: 20px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    margin-top: 20px;
 }
 
 .sdr-title {
@@ -380,17 +375,27 @@ textarea#json-command {
     text-align: center;
 }
 
+.sdr-container {
+    width: 100%;
+    height: 400px;
+    background: black;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
 #waterfall {
     width: 100%;
-    height: 300px;
-    background-color: black;
+    height: 100%;
     border-radius: 10px;
-    margin-bottom: 15px;
 }
 
 .sdr-controls {
+    padding: 20px;
+}
+
+.sdr-control-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 15px;
-    align-items: end;
+    margin-bottom: 20px;
 } 

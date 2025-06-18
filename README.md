@@ -37,4 +37,35 @@ To start the web interface, run the following command from the project root:
 uv run start-robot-ui
 ```
 
-The application will be available at [http://localhost:5000](http://localhost:5000). 
+The application will be available at [http://localhost:5000](http://localhost:5000).
+
+## Command Line Options
+
+The web UI supports the following command line arguments:
+
+```bash
+uv run start-robot-ui --help
+```
+
+### Available Arguments
+
+- `--port PORT`: Specify the port to run the web server on (default: 5000)
+- `--no-robot`: Disable robot connection for testing without a physical robot
+
+### Examples
+
+```bash
+# Run on default port (5000)
+uv run start-robot-ui
+
+# Run on custom port
+uv run start-robot-ui --port 8080
+
+# Run without robot connection (for testing)
+uv run start-robot-ui --no-robot
+
+# Combine arguments
+uv run start-robot-ui --port 3000 --no-robot
+```
+
+When using `--no-robot`, all robot commands will be simulated and the interface will show "Robot disabled (--no-robot mode)" in the status section. 

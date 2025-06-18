@@ -39,14 +39,20 @@ def normalize_samples(samps: np.ndarray) -> np.ndarray:
     return samps
 
 
-def compute_psd_db(samples: np.ndarray, fft_size: Optional[int] = None, min_val_db: float = -100) -> np.ndarray:
+def compute_psd_db(
+    samples: np.ndarray, 
+    fft_size: Optional[int] = None, 
+    min_val_db: float = -120,
+    window: Optional[np.ndarray] = None
+) -> np.ndarray:
     """
-    Compute power spectral density in dB.
+    Compute power spectral density in dB with windowing for better FM signal visibility.
     
     Args:
         samples: Input samples
         fft_size: FFT size (defaults to length of samples)
         min_val_db: Minimum value in dB for clipping
+        window: A numpy array representing the window function to apply. If None, a Hanning window is used.
         
     Returns:
         PSD in dB, fftshifted
@@ -59,10 +65,24 @@ def compute_psd_db(samples: np.ndarray, fft_size: Optional[int] = None, min_val_
     else:
         samples_for_fft = np.pad(samples, (0, fft_size - len(samples)), 'constant', constant_values=(0,))
     
-    spectrum = np.fft.fft(samples_for_fft, n=fft_size)
-    psd_line = np.abs(spectrum)**2
+    # Apply window to reduce spectral leakage
+    if window is None:
+        window = np.hanning(len(samples_for_fft))
+    
+    windowed_samples = samples_for_fft * window
+    
+    # Apply window correction factor
+    window_correction = np.sum(window**2) / len(window)
+    
+    spectrum = np.fft.fft(windowed_samples, n=fft_size)
+    psd_line = (np.abs(spectrum)**2) / window_correction
     psd_line_shifted = np.fft.fftshift(psd_line)
-    psd_line_db = 10 * np.log10(psd_line_shifted + 1e-12)
+    
+    # Normalize by sample rate and FFT size for proper PSD scaling
+    psd_line_shifted = psd_line_shifted / fft_size
+    
+    # Convert to dB with better numerical stability
+    psd_line_db = 10 * np.log10(psd_line_shifted + 1e-15)
     psd_line_db = np.clip(psd_line_db, min_val_db, None)
     
     return psd_line_db

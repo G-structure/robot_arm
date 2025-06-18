@@ -3,41 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🤖 Robot Arm, Camera & SDR Control</title>
+    <title>🤖 Robot Arm Camera Control</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 Robot Arm, Camera & SDR Control</h1>
-            <p>Live camera, waterfall, and robot control interface</p>
+            <h1>🤖 Robot Arm Camera Control</h1>
+            <p>Live camera feed and control interface</p>
         </div>
         
         <div class="main-content">
-            <div class="left-column">
-                <div class="camera-section">
-                    <h2 class="camera-title">📹 Live Camera Feed</h2>
-                    <div class="camera-container">
-                        <img src="/video_feed" class="camera-feed" alt="Robot Arm Camera Feed">
-                    </div>
-                </div>
-                <div class="sdr-section">
-                    <h2 class="sdr-title">📡 SDR Waterfall</h2>
-                    <canvas id="waterfall"></canvas>
-                    <div class="sdr-controls">
-                        <div class="input-group">
-                            <label for="sdr-freq">Frequency (MHz)</label>
-                            <input type="number" id="sdr-freq" value="100">
-                        </div>
-                        <div class="input-group">
-                            <label for="sdr-gain">Gain (dB)</label>
-                            <input type="number" id="sdr-gain" value="30">
-                        </div>
-                        <div class="input-group">
-                            <label for="sdr-rate">Sample Rate (MS/s)</label>
-                            <input type="number" id="sdr-rate" value="2.048" step="0.001">
-                        </div>
-                        <button id="sdr-update" class="btn">Update SDR</button>
+            <div class="camera-section">
+                <h2 class="camera-title">📹 Live Camera Feed</h2>
+                <div class="camera-container">
+                    <img src="/video_feed" class="camera-feed" alt="Robot Arm Camera Feed">
+                    <div class="camera-overlay">
+                        <div id="camera-status">● LIVE</div>
                     </div>
                 </div>
             </div>
@@ -138,6 +120,46 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="sdr-section">
+            <h2 class="sdr-title">📡 SDR Waterfall</h2>
+            <div class="sdr-container">
+                <canvas id="waterfall"></canvas>
+            </div>
+            <div class="sdr-controls card">
+                <h3>SDR Controls</h3>
+                <div class="sdr-control-grid">
+                    <div class="input-group">
+                        <label for="sdr-freq">Center Freq (MHz)</label>
+                        <input type="number" id="sdr-freq" value="100">
+                    </div>
+                    <div class="input-group">
+                        <label for="sdr-rate">Sample Rate (MS/s)</label>
+                        <input type="number" id="sdr-rate" value="10">
+                    </div>
+                    <div class="input-group">
+                        <label for="sdr-gain">Gain (dB)</label>
+                        <input type="number" id="sdr-gain" value="20">
+                    </div>
+                     <div class="input-group">
+                        <label for="sdr-fft-size">FFT Size</label>
+                        <select id="sdr-fft-size">
+                            <option value="1024">1024</option>
+                            <option value="2048">2048</option>
+                            <option value="4096">4096</option>
+                            <option value="8192">8192</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn" id="sdr-update-settings">Apply Settings</button>
+                 <h3>Spectrum View</h3>
+                 <div class="sdr-control-grid">
+                    <button class="btn btn-secondary" id="sdr-pause">Pause</button>
+                    <button class="btn btn-secondary" id="sdr-color">Colormap</button>
+                    <button class="btn btn-secondary" id="sdr-max-hold">Max Hold</button>
+                 </div>
             </div>
         </div>
 
