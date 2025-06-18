@@ -1,6 +1,10 @@
 // --- Global State ---
 let robotIP = '';
 
+// --- SDR / Waterfall ---
+let spectrum;
+let sdrSocket;
+
 // --- DOM Elements ---
 const feedbackBox = () => document.getElementById('feedback-box');
 const jsonCommandInput = () => document.getElementById('json-command');
@@ -117,6 +121,11 @@ function initializeEventListeners() {
         sendJsonBtn.addEventListener('click', sendRawJson);
     }
 
+    const sdrUpdateBtn = document.getElementById('sdr-update');
+    if (sdrUpdateBtn) {
+        sdrUpdateBtn.addEventListener('click', updateSdrConfig);
+    }
+
     if (jsonCommandInput()) {
         jsonCommandInput().addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -215,10 +224,58 @@ function initializeEventListeners() {
     }
 }
 
+function initializeWaterfall() {
+    const canvas = document.getElementById('waterfall');
+    if (!canvas) return;
+    
+    spectrum = new Spectrum(
+        'waterfall',
+        {
+            spectrumPercent: 20,
+            bandplan: null,
+            colormap: colormaps[0],
+            db_min: -120.0,
+            db_max: -20.0,
+            zoom: 1.0
+        }
+    );
+
+    connectSdrWebSocket();
+}
+
+function connectSdrWebSocket() {
+    const url = `ws://${window.location.host}/sdr`;
+    sdrSocket = new WebSocket(url);
+
+    sdrSocket.onopen = () => console.log("SDR WebSocket connected");
+    sdrSocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (Array.isArray(data)) {
+            spectrum.addData(data);
+        } else {
+            console.log("SDR config updated:", data);
+        }
+    };
+    sdrSocket.onclose = () => {
+        console.log("SDR WebSocket disconnected. Reconnecting...");
+        setTimeout(connectSdrWebSocket, 3000);
+    };
+    sdrSocket.onerror = (error) => console.error("SDR WebSocket error:", error);
+}
+
+function updateSdrConfig() {
+    if (sdrSocket && sdrSocket.readyState === WebSocket.OPEN) {
+        const freq = document.getElementById('sdr-freq').value * 1e6;
+        const gain = document.getElementById('sdr-gain').value;
+        const rate = document.getElementById('sdr-rate').value * 1e6;
+        sdrSocket.send(JSON.stringify({ freq, gain, rate }));
+    }
+}
 
 // --- Page Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
     initializeEventListeners();
     updateStatus();
     setInterval(updateStatus, 2000); // Poll for status every 2 seconds
+    initializeWaterfall();
 }); 
