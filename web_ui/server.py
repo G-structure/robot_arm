@@ -6,8 +6,8 @@ from flask import Flask, render_template, request, jsonify
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
 # Configuration for the robot arm's IP address.
-# You can set an environment variable ROBOT_IP, or it will default to 192.168.1.1.
-ROBOT_IP = os.environ.get("ROBOT_IP", "192.168.1.1")
+# You can set an environment variable ROBOT_IP, or it will default to 192.168.4.1.
+ROBOT_IP = os.environ.get("ROBOT_IP", "192.168.4.1")
 ROBOT_URL = f"http://{ROBOT_IP}"
 
 @app.route('/')
