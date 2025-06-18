@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## The Golden Rule: Never Run Python Raw
+
+**You MUST NOT run `python`, `pip`, or `python -m venv` directly.** These tools are considered legacy. Every action must be performed through the `uv` command-line interface. This ensures that all operations are fast, consistent, and benefit from `uv`'s advanced features like caching and its rust-based resolver.

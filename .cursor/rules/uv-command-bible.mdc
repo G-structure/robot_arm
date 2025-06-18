@@ -1,0 +1,70 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+## The `uv` Command Bible for Agents
+
+This is your comprehensive guide to the `uv` commands you will use for all Python tasks.
+
+### 1. Project Initialization and Management
+
+-   **Command**: `uv init`
+-   **When to Use**: When starting any new Python project that is more than a single script.
+-   **Action**: This command creates a `pyproject.toml` file, establishing the foundation for a modern Python project. It defines the project's identity and dependencies.
+-   **Example**: `uv init`
+
+### 2. Dependency Management
+
+-   **Command**: `uv add <package>` and `uv add --dev <package>`
+-   **When to Use**: Whenever a new production or development dependency is required.
+-   **Action**: This command adds the dependency to the `[project.dependencies]` or `[project.optional-dependencies.dev]` section of `pyproject.toml`, updates the `uv.lock` file, and installs the package into the virtual environment. It is the single correct way to add dependencies.
+-   **Example**: `uv add fastapi`, `uv add --dev pytest`
+
+-   **Command**: `uv remove <package>`
+-   **When to Use**: To remove a dependency.
+-   **Action**: Removes the package from `pyproject.toml` and the environment.
+
+### 3. Environment Synchronization
+
+-   **Command**: `uv sync`
+-   **When to Use**: After pulling new code, switching branches, or to ensure the environment is pristine.
+-   **Action**: This is a critical command. It synchronizes the virtual environment to match the exact state of the `uv.lock` file. It installs required packages and, crucially, **uninstalls** any that are not specified in the lockfile, guaranteeing a clean and reproducible environment.
+
+-   **Command**: `uv lock`
+-   **When to Use**: To manually update the lockfile, especially before committing changes or when upgrading specific packages.
+-   **Action**: Resolves the dependency tree from `pyproject.toml` and writes the exact versions to `uv.lock`. Use `uv lock --upgrade-package <package>` for controlled updates.
+
+### 4. Running Code and Tools
+
+-   **Command**: `uv run <command>`
+-   **When to Use**: For **all** execution of scripts, tools, or applications within the project.
+-   **Action**: Executes the given command within the project's managed virtual environment. This completely replaces the need for `source .venv/bin/activate`. For any script or tool that is part of the project, you must use `uv run`. If the tool is defined in `pyproject.toml`'s `[project.scripts]`, you can run it by name.
+-   **Example**: `uv run python my_script.py`, `uv run pytest`, `uv run uvicorn main:app`
+
+### 5. Managing Standalone Scripts (PEP 723)
+
+-   **Command**: `uv add --script <script_name>.py <package>`
+-   **When to Use**: For single-file utility scripts that are not part of a larger project.
+-   **Action**: Embeds dependency information directly into the script file itself.
+-   **Example**: `uv add --script process_logs.py pandas`
+
+-   **Command**: `uv run <script_name>.py`
+-   **When to Use**: To execute a standalone script with managed dependencies.
+-   **Action**: `uv` automatically creates a temporary virtual environment, installs the script's embedded dependencies, and runs the script.
+
+### 6. Packaging and Publishing
+
+-   **Command**: `uv build`
+-   -   **When to Use**: When preparing a package for distribution.
+-   **Action**: Creates a source distribution (`.tar.gz`) and a wheel (`.whl`) in the `dist/` directory.
+
+-   **Command**: `uv publish`
+-   **When to Use**: To upload a package to PyPI or another index.
+-   **Action**: Publishes the distributions created by `uv build`.
+
+### 7. Virtual Environments
+
+-   **Command**: `uv venv`
+-   **When to Use**: Only when you need to create a virtual environment for a legacy project that doesn't use `pyproject.toml`. For all modern projects, `uv init` and subsequent commands handle this automatically.
+-   **Action**: Creates a `.venv` directory. This is a fast replacement for `python -m venv`.

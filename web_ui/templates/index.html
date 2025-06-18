@@ -3,17 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RoArm-M2 Control</title>
+    <title>🤖 Robot Arm Camera Control</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>RoArm-M2 Control Panel</h1>
-        </header>
-        <main class="main-grid">
-            <div class="control-column">
-                <div class="card">
+        <div class="header">
+            <h1>🤖 Robot Arm Camera Control</h1>
+            <p>Live camera feed and control interface</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="camera-section">
+                <h2 class="camera-title">📹 Live Camera Feed</h2>
+                <div class="camera-container">
+                    <img src="/video_feed" class="camera-feed" alt="Robot Arm Camera Feed">
+                    <div class="camera-overlay">
+                        <div id="camera-status">● LIVE</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-panel">
+                 <div class="card">
                     <h2>Direct Control</h2>
                     <div class="control-section">
                         <h3>Angle Control (Joints)</h3>
@@ -109,25 +121,26 @@
                     </div>
                 </div>
             </div>
-            <div class="command-column">
-                <div class="card">
-                    <h3>Manual Command</h3>
-                    <div class="manual-command">
-                        <textarea id="json-command" placeholder='{"T":105}'></textarea>
-                        <button class="btn" id="send-json">Send</button>
-                    </div>
-                    <h3>Feedback</h3>
-                    <pre id="feedback-box">Robot feedback will appear here.</pre>
+        </div>
+
+        <div class="command-column">
+            <div class="card">
+                <h3>Manual Command</h3>
+                <div class="manual-command">
+                    <textarea id="json-command" placeholder='{"T":105}'></textarea>
+                    <button class="btn" id="send-json">Send</button>
                 </div>
-                <div class="card">
-                    <h3>Command Library</h3>
-                    <input type="text" id="command-search" placeholder="Search for commands...">
-                    <div id="command-list" class="command-list">
-                        <!-- Commands will be populated by JS -->
-                    </div>
+                <h3>Feedback</h3>
+                <pre id="feedback-box">Robot feedback will appear here.</pre>
+            </div>
+            <div class="card">
+                <h3>Command Library</h3>
+                <input type="text" id="command-search" placeholder="Search for commands...">
+                <div id="command-list" class="command-list">
+                    <!-- Commands will be populated by JS -->
                 </div>
             </div>
-        </main>
+        </div>
     </div>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>

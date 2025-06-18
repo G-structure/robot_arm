@@ -1,0 +1,16 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# General Agent Development Guidelines
+
+This document outlines general principles for the AI agent's software development process.
+
+## Core Principles
+
+- **Clarity and Simplicity**: Write code that is easy to understand and maintain.
+- **Modularity**: Break down complex problems into smaller, manageable components.
+- **Robustness**: Anticipate and handle errors gracefully.
+- **User-Centric**: Prioritize the user's goals and requirements in all development tasks.
+- **Iterative Development**: Work in small, incremental steps, and seek user feedback when appropriate. 

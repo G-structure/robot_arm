@@ -1,0 +1,26 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+### `pyproject.toml` Structure for Tools
+
+When creating a project that includes command-line applications, you MUST define them in the `[project.scripts]` table of the `pyproject.toml` file. This makes them runnable via `uv run`.
+
+**Example `pyproject.toml` for a CLI tool:**
+
+```toml
+[project]
+name = "my-cli-tool"
+version = "0.1.0"
+dependencies = [
+  "click==8.1.7",
+]
+
+[project.scripts]
+my-cli = "my_cli_tool.main:cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+```
