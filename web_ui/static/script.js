@@ -17,10 +17,10 @@ const lastResponse = () => document.getElementById('last-response');
 
 // --- Robot State for 3D Model ---
 const robotState = {
-    base: 0,
-    shoulder: 45,
-    elbow: 90,
-    hand: 0,
+    base: 0,     // 0° = facing forward
+    shoulder: 2, // ~2° = shoulder pointing straight up (init position)
+    elbow: 90,   // 90° = elbow at 90 degrees
+    hand: 180,   // 180° = hand closed/facing down (init position)
     gripper: 15,
 };
 
@@ -253,21 +253,25 @@ function updateRobotModel() {
 
     // Import THREE dynamically for math utils
     import('three').then(THREE => {
-        // Base rotation (Y-axis yaw)
+        // Base rotation (Y-axis yaw) - 0° = facing forward
         robotModel.base_pivot.rotation.y = THREE.MathUtils.degToRad(robotState.base);
 
-        // Shoulder rotation (X-axis pitch)
-        robotModel.shoulder_pivot.rotation.x = THREE.MathUtils.degToRad(robotState.shoulder - 90);
+        // Shoulder rotation (X-axis pitch) - CORRECTED MAPPING
+        // Robot's ~0° = shoulder straight up, but movements are reversed
+        robotModel.shoulder_pivot.rotation.x = THREE.MathUtils.degToRad(-robotState.shoulder);
         
-        // Elbow rotation (X-axis pitch)
-        robotModel.elbow_pivot.rotation.x = THREE.MathUtils.degToRad(robotState.elbow - 90);
+        // Elbow rotation (X-axis pitch) - CORRECTED MAPPING  
+        // Robot's 90° = elbow bent at 90°, 3D model starts straight
+        // So we need to bend the elbow by the robot's elbow angle
+        robotModel.elbow_pivot.rotation.x = THREE.MathUtils.degToRad(-robotState.elbow);
 
-        // Hand rotation (Y-axis roll)
-        robotModel.hand_pivot.rotation.y = THREE.MathUtils.degToRad(robotState.hand);
+        // Hand rotation (Z-axis roll) - CORRECTED MAPPING
+        // Robot's 180° = hand closed/down, 0° = hand open/up
+        robotModel.hand_pivot.rotation.z = THREE.MathUtils.degToRad(robotState.hand - 180);
 
         // Gripper open/close
         if (robotModel.prong1 && robotModel.prong2) {
-            const gripperAngle = THREE.MathUtils.degToRad(robotState.gripper);
+            const gripperAngle = THREE.MathUtils.degToRad(robotState.gripper * 0.5);
             robotModel.prong1.rotation.z = -gripperAngle;
             robotModel.prong2.rotation.z = gripperAngle;
         }
@@ -279,10 +283,16 @@ function updateRobotStateFromFeedback(data) {
     // Convert radian feedback to degrees
     const radToDeg = (val) => val !== undefined ? (val * RAD2DEG) : undefined;
 
+    // Map robot feedback to 3D model coordinate system
     if (data.b !== undefined) robotState.base = radToDeg(data.b);
     if (data.s !== undefined) robotState.shoulder = radToDeg(data.s);
     if (data.e !== undefined) robotState.elbow = radToDeg(data.e);
     if (data.t !== undefined) robotState.hand = radToDeg(data.t);
+    
+    // Handle gripper if present (assuming it might be in a different field)
+    if (data.T !== undefined && data.T < 500) { // T field might be gripper when < 500
+        robotState.gripper = data.T / 10; // Scale as needed
+    }
 
     // Update sliders & feedback boxes
     updateSliderValues();
@@ -544,6 +554,7 @@ function initializeEventListeners() {
     
     // System buttons
     const btnInit = document.getElementById('btn-init');
+    const btnSync3D = document.getElementById('btn-sync-3d');
     const btnTorqueOn = document.getElementById('btn-torque-on');
     const btnTorqueOff = document.getElementById('btn-torque-off');
     const btnLedOn = document.getElementById('btn-led-on');
@@ -551,15 +562,41 @@ function initializeEventListeners() {
 
     if(btnInit) btnInit.addEventListener('click', () => {
         sendCommand({"T":102,"base":0,"shoulder":0,"elbow":1.5707965,"hand":3.1415926,"spd":0,"acc":0});
-        // Reset robot state for visualization
-        robotState.base = 0;
-        robotState.shoulder = 45;
-        robotState.elbow = 90;
-        robotState.hand = 0;
+        // Reset robot state for visualization to match actual robot init position
+        robotState.base = 0;     // ~0° = facing forward
+        robotState.shoulder = 2; // ~2° = shoulder pointing straight up
+        robotState.elbow = 90;   // 90° = elbow at 90 degrees
+        robotState.hand = 180;   // 180° = hand closed/facing down
         robotState.gripper = 15;
         updateSliderValues();
         updateRobotModel();
     });
+    
+    if(btnSync3D) btnSync3D.addEventListener('click', async () => {
+        // Immediately fetch current robot position and update 3D model
+        try {
+            const cmd = { "T": 105 }; // CMD_SERVO_RAD_FEEDBACK
+            const response = await fetch('/robot/command', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: JSON.stringify(cmd) })
+            });
+            if (response.ok) {
+                const result = await response.json();
+                const data = JSON.parse(result.response);
+                updateRobotStateFromFeedback(data);
+                if (feedbackBox()) {
+                    feedbackBox().textContent = `3D Model synced with robot position: b=${data.b?.toFixed(3)}, s=${data.s?.toFixed(3)}, e=${data.e?.toFixed(3)}, t=${data.t?.toFixed(3)}`;
+                }
+            }
+        } catch (error) {
+            console.error("Failed to sync 3D model:", error);
+            if (feedbackBox()) {
+                feedbackBox().textContent = `Sync failed: ${error.message}`;
+            }
+        }
+    });
+    
     if(btnTorqueOn) btnTorqueOn.addEventListener('click', () => sendCommand({"T":210,"cmd":1}));
     if(btnTorqueOff) btnTorqueOff.addEventListener('click', () => sendCommand({"T":210,"cmd":0}));
     if(btnLedOn) btnLedOn.addEventListener('click', () => sendCommand({"T":114,"led":255}));
