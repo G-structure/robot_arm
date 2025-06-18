@@ -281,9 +281,14 @@ def chatbot_submit():
     job_id = data.get('job_id')
     reply = data.get('reply')
     logprobs = data.get('logprobs')
+    expert_groups = data.get('expert_groups')
     if not job_id or reply is None:
         return jsonify({'error': 'Missing job_id or reply'}), 400
-    chatbot_results[job_id] = {'reply': reply, 'logprobs': logprobs}
+    chatbot_results[job_id] = {
+        'reply': reply,
+        'logprobs': logprobs,
+        'expert_groups': expert_groups
+    }
     chatbot_pending.pop(job_id, None)
     return jsonify({'status': 'ok'})
 

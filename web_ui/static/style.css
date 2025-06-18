@@ -695,4 +695,44 @@ textarea#json-command:focus {
     color: #00ffaa;
     font-family: 'Share Tech Mono', monospace;
     opacity: 0.92;
+}
+
+.chatbot-bits-window {
+    margin-top: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.chatbot-bits-label-row, .chatbot-bits-box-row {
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    gap: 6px;
+    width: 100%;
+}
+.chatbot-bits-label-row {
+    margin-bottom: 2px;
+    font-size: 1em;
+    color: #cccc99;
+    font-family: 'Share Tech Mono', monospace;
+    opacity: 0.85;
+    text-align: center;
+}
+.chatbot-bits-box-row {
+    margin-bottom: 0;
+}
+.chatbot-bit-box {
+    width: 100%;
+    height: 38px;
+    border-radius: 3px;
+    border: 1.5px solid #00ffaa;
+    background: #0a0a2a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25em;
+    color: #00ffaa;
+    font-family: 'Share Tech Mono', monospace;
+    font-weight: bold;
+    box-shadow: 0 0 2px #00ffaa44;
 } 

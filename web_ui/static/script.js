@@ -707,7 +707,7 @@ function updateSliderValues() {
 }
 
 // --- Chatbot Logic ---
-function appendChatbotMessage(text, sender, logprobs) {
+function appendChatbotMessage(text, sender, logprobs, expert_groups) {
     const messagesDiv = document.getElementById('chatbot-messages');
     if (!messagesDiv) return;
     const msg = document.createElement('div');
@@ -716,10 +716,48 @@ function appendChatbotMessage(text, sender, logprobs) {
     messagesDiv.appendChild(msg);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
     // If logprobs are present and sender is bot, update the logprobs window
-    if (sender === 'bot' && Array.isArray(logprobs)) {
+    if (sender === 'bot') {
         const logprobsWindow = document.getElementById('chatbot-logprobs-window');
         if (logprobsWindow) {
-            logprobsWindow.textContent = 'logprobs: [' + logprobs.map(x => x.toFixed(3)).join(', ') + ']';
+            if (Array.isArray(logprobs)) {
+                logprobsWindow.textContent = 'logprobs: [' + logprobs.map(x => x.toFixed(3)).join(', ') + ']';
+            } else {
+                logprobsWindow.textContent = 'logprobs: (not available)';
+            }
+        }
+    }
+    // For testing: always show a hardcoded expert_groups array in the bits window after every bot reply
+    if (sender === 'bot') {
+        const bitsWindow = document.getElementById('chatbot-bits-window');
+        if (bitsWindow) {
+            let displayGroups;
+            if (Array.isArray(expert_groups) && expert_groups.length === 16) {
+                displayGroups = expert_groups;
+            } else {
+                console.warn('expert_groups missing or not length 16:', expert_groups);
+                displayGroups = Array(16).fill(-1);
+            }
+            // Create label row
+            const labelRow = document.createElement('div');
+            labelRow.className = 'chatbot-bits-label-row';
+            for (let i = 16; i <= 31; i++) {
+                const label = document.createElement('div');
+                label.textContent = i;
+                labelRow.appendChild(label);
+            }
+            // Create box row
+            const boxRow = document.createElement('div');
+            boxRow.className = 'chatbot-bits-box-row';
+            for (let i = 0; i < 16; i++) {
+                const box = document.createElement('div');
+                box.className = 'chatbot-bit-box';
+                box.textContent = displayGroups[i];
+                boxRow.appendChild(box);
+            }
+            // Clear and append
+            bitsWindow.innerHTML = '';
+            bitsWindow.appendChild(labelRow);
+            bitsWindow.appendChild(boxRow);
         }
     }
 }
@@ -758,7 +796,7 @@ async function pollChatbotResult(job_id, tries = 0) {
         const res = await fetch(`/chatbot/result/${job_id}`);
         const data = await res.json();
         if (data.reply) {
-            appendChatbotMessage(data.reply, 'bot', data.logprobs);
+            appendChatbotMessage(data.reply, 'bot', data.logprobs, data.expert_groups);
         } else if (data.status === 'pending') {
             setTimeout(() => pollChatbotResult(job_id, tries + 1), 1000);
         } else {
