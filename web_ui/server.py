@@ -170,11 +170,15 @@ def camera_info():
         "fps": 30
     })
 
-if __name__ == '__main__':
+def main():
+    """Main entry point to run the Flask application."""
     try:
         # Run the Flask app
         app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
     except KeyboardInterrupt:
         logger.info("Shutting down...")
     finally:
-        camera_stream.cleanup() 
+        camera_stream.cleanup()
+
+if __name__ == '__main__':
+    main() 
