@@ -1,0 +1,141 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ｌａｙｅｒ：ｒｏｂｏｔ</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>RoArm-M2 Control Interface</h1>
+            <p>Interface layer active. All you have to do is connect.</p>
+        </div>
+        
+        <div class="main-layout">
+            <div class="visuals-container">
+                <div class="card visual-card" id="camera-card">
+                    <h2 class="card-title">//: LIVE FEED</h2>
+                    <div class="camera-container">
+                        <img src="https://via.placeholder.com/640x480.png?text=NO+SIGNAL" class="camera-feed" alt="Robot Arm Camera Feed">
+                        <div class="camera-overlay">
+                            <div id="camera-status"><span class="blink">●</span> OFFLINE</div>
+                            <div id="camera-timestamp">Present Day. Present Time.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card visual-card" id="model-card">
+                    <h2 class="card-title">//: 3D RENDER</h2>
+                    <div id="robot-container-3d" class="robot-diagram-container">
+                        <!-- three.js canvas will be inserted here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls-container">
+                <div class="controls-column">
+                    <div class="card">
+                        <h2 class="card-title">//: DIRECT CONTROL</h2>
+                        <div class="control-section">
+                            <h3>Joint Angle Control</h3>
+                            <div class="joint-controls">
+                                <!-- Joint 1: Base -->
+                                <div class="control-group">
+                                    <label for="angle-b-slider">Base</label>
+                                    <input type="range" id="angle-b-slider" class="slider" min="-90" max="90" value="0" data-joint="base">
+                                    <div class="feedback" id="angle-b">0.0°</div>
+                                </div>
+                                <!-- Joint 2: Shoulder -->
+                                <div class="control-group">
+                                    <label for="angle-s-slider">Shoulder</label>
+                                    <input type="range" id="angle-s-slider" class="slider" min="-90" max="90" value="45" data-joint="shoulder">
+                                    <div class="feedback" id="angle-s">45.0°</div>
+                                </div>
+                                <!-- Joint 3: Elbow -->
+                                <div class="control-group">
+                                    <label for="angle-e-slider">Elbow</label>
+                                    <input type="range" id="angle-e-slider" class="slider" min="-90" max="90" value="90" data-joint="elbow">
+                                    <div class="feedback" id="angle-e">90.0°</div>
+                                </div>
+                                <!-- Joint 4: Hand -->
+                                <div class="control-group">
+                                    <label for="angle-h-slider">Hand</label>
+                                     <input type="range" id="angle-h-slider" class="slider" min="-90" max="90" value="0" data-joint="hand">
+                                    <div class="feedback" id="angle-h">0.0°</div>
+                                </div>
+                                <!-- Gripper -->
+                                <div class="control-group">
+                                    <label for="angle-g-slider">Gripper</label>
+                                    <input type="range" id="angle-g-slider" class="slider" min="0" max="30" value="15" data-joint="gripper">
+                                    <div class="feedback" id="angle-g">15.0</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="control-section">
+                            <h3>Coordinate Position Control (XYZ)</h3>
+                            <div class="coord-controls">
+                                <!-- X, Y, Z controls remain for backend logic -->
+                                 <div class="control-group">
+                                    <label>X</label><div class="feedback" id="coord-x">0.00</div>
+                                    <div class="buttons"><button class="control-btn coord-btn" data-axis="x" data-dir="-1">-</button><button class="control-btn coord-btn" data-axis="x" data-dir="1">+</button></div>
+                                </div>
+                                <div class="control-group">
+                                    <label>Y</label><div class="feedback" id="coord-y">0.00</div>
+                                    <div class="buttons"><button class="control-btn coord-btn" data-axis="y" data-dir="-1">-</button><button class="control-btn coord-btn" data-axis="y" data-dir="1">+</button></div>
+                                </div>
+                                <div class="control-group">
+                                    <label>Z</label><div class="feedback" id="coord-z">0.00</div>
+                                    <div class="buttons"><button class="control-btn coord-btn" data-axis="z" data-dir="-1">-</button><button class="control-btn coord-btn" data-axis="z" data-dir="1">+</button></div>
+                                </div>
+                                <div class="control-group">
+                                    <label>Tool</label><div class="feedback" id="coord-t">0.00</div>
+                                    <div class="buttons"><button class="control-btn coord-btn" data-axis="t" data-dir="-1">-</button><button class="control-btn coord-btn" data-axis="t" data-dir="1">+</button></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="control-section">
+                            <h3>System Functions</h3>
+                            <div class="system-controls">
+                                <button class="btn" id="btn-init">Initialize Position</button>
+                                <button class="btn" id="btn-torque-on">Torque ON</button>
+                                <button class="btn" id="btn-torque-off">Torque OFF</button>
+                                 <button class="btn" id="btn-led-on">LED ON</button>
+                                <button class="btn" id="btn-led-off">LED OFF</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-column">
+                    <div class="card">
+                        <h3 class="card-title">//: MANUAL COMMAND</h3>
+                        <div class="manual-command">
+                            <textarea id="json-command" placeholder='{"T":105}'></textarea>
+                            <button class="btn" id="send-json">Send</button>
+                        </div>
+                        <h3>//: FEEDBACK LOG</h3>
+                        <pre id="feedback-box">Robot feedback will appear here.</pre>
+                    </div>
+                    <div class="card">
+                        <h3 class="card-title">//: COMMAND LIBRARY</h3>
+                        <input type="text" id="command-search" placeholder="Search for commands...">
+                        <div id="command-list" class="command-list">
+                            <!-- Commands will be populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="script.js"></script>
+</body>
+</html>

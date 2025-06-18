@@ -19,10 +19,18 @@ dependencies = [
     "numpy==1.26.4",
     "flask-sock==0.7.0",
     "scipy==1.11.4",
+    # MoE Backend dependencies
+    "torch>=2.0.0",
+    "transformers>=4.36.0",
+    "websockets>=11.0.0",
+    "accelerate>=0.24.0",
+    "bitsandbytes>=0.41.0",
 ]
 
 [tool.setuptools.packages.find]
 include = ["web_ui"]
 
 [project.scripts]
-start-robot-ui = "web_ui.server:main" 
+start-robot-ui = "web_ui.server:main"
+start-moe-backend = "moe_backend.server:main"
+moe-cli = "moe_backend.cli:main" 

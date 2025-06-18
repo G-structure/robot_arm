@@ -1,0 +1,54 @@
+name: 'maia-httpd'
+on: [push, pull_request]
+
+env:
+  CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    working-directory: maia-httpd
+
+jobs:
+  armv7:
+    name: Build and test (armv7)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install cross
+      run: cargo install cross
+    - name: Install armv7-unknown-linux-gnueabihf Rust target
+      run: rustup target add armv7-unknown-linux-gnueabihf
+    - name: Format
+      run: cargo fmt -- --check
+    - name: Clippy
+      run: cross clippy --target armv7-unknown-linux-gnueabihf --all-targets --all-features -- -D warnings
+    - name: Doc
+      run: RUSTDOCFLAGS="-D warnings" cross doc --target armv7-unknown-linux-gnueabihf
+    - name: Build
+      run: cross build --verbose --target armv7-unknown-linux-gnueabihf
+    - name: Run tests
+      run: cross test --verbose --target armv7-unknown-linux-gnueabihf
+  x86_64:
+    name: Build and test (x86_64)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Format
+      run: cargo fmt -- --check
+    - name: Clippy
+      run: cargo clippy --all-targets --all-features -- -D warnings
+    - name: Doc
+      run: RUSTDOCFLAGS="-D warnings" cargo doc
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
+  publish:
+    name: Publish Rust crate
+    runs-on: ubuntu-latest
+    if: startsWith(github.event.ref, 'refs/tags/maia-httpd-')
+    needs: [armv7, x86_64]
+    steps:
+    - uses: actions/checkout@v4      
+    - name: Publish crate
+      run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
