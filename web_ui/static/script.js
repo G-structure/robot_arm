@@ -706,6 +706,80 @@ function updateSliderValues() {
     });
 }
 
+// --- Chatbot Logic ---
+function appendChatbotMessage(text, sender, logprobs) {
+    const messagesDiv = document.getElementById('chatbot-messages');
+    if (!messagesDiv) return;
+    const msg = document.createElement('div');
+    msg.className = 'chatbot-message ' + sender;
+    msg.textContent = text;
+    messagesDiv.appendChild(msg);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    // If logprobs are present and sender is bot, update the logprobs window
+    if (sender === 'bot' && Array.isArray(logprobs)) {
+        const logprobsWindow = document.getElementById('chatbot-logprobs-window');
+        if (logprobsWindow) {
+            logprobsWindow.textContent = 'logprobs: [' + logprobs.map(x => x.toFixed(3)).join(', ') + ']';
+        }
+    }
+}
+
+async function sendChatbotMessage() {
+    const input = document.getElementById('chatbot-input');
+    if (!input || !input.value.trim()) return;
+    const userMsg = input.value.trim();
+    appendChatbotMessage(userMsg, 'user');
+    input.value = '';
+    try {
+        // Step 1: Enqueue the message
+        const res = await fetch('/chatbot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: userMsg })
+        });
+        const data = await res.json();
+        if (!data.job_id) {
+            appendChatbotMessage('Error: Could not enqueue message.', 'bot');
+            return;
+        }
+        // Step 2: Poll for result
+        pollChatbotResult(data.job_id);
+    } catch (err) {
+        appendChatbotMessage('Error contacting chatbot.', 'bot');
+    }
+}
+
+async function pollChatbotResult(job_id, tries = 0) {
+    if (tries > 60) { // ~60*1s = 1 minute timeout
+        appendChatbotMessage('No response from chatbot (timeout).', 'bot');
+        return;
+    }
+    try {
+        const res = await fetch(`/chatbot/result/${job_id}`);
+        const data = await res.json();
+        if (data.reply) {
+            appendChatbotMessage(data.reply, 'bot', data.logprobs);
+        } else if (data.status === 'pending') {
+            setTimeout(() => pollChatbotResult(job_id, tries + 1), 1000);
+        } else {
+            appendChatbotMessage('Error: ' + (data.error || 'Unknown error.'), 'bot');
+        }
+    } catch (err) {
+        appendChatbotMessage('Error polling chatbot result.', 'bot');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('chatbot-input');
+    const sendBtn = document.getElementById('chatbot-send');
+    if (input && sendBtn) {
+        sendBtn.addEventListener('click', sendChatbotMessage);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') sendChatbotMessage();
+        });
+    }
+});
+
 // --- Page Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
     // Initialize 3D model first

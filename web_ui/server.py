@@ -14,6 +14,8 @@ import logging
 import numpy as np
 import os
 from flask_sock import Sock
+import uuid
+from collections import deque
 
 from web_ui.sdr.stream import SDRStreamer
 
@@ -191,6 +193,11 @@ class RobotController:
 # Global robot controller
 robot_controller = RobotController()
 
+# In-memory job queue and result store
+chatbot_job_queue = deque()
+chatbot_results = {}
+chatbot_pending = {}
+
 @app.route('/')
 def index():
     """Main page"""
@@ -237,6 +244,48 @@ def camera_info():
         "resolution": "640x480",
         "fps": 30
     })
+
+@app.route('/chatbot', methods=['POST'])
+def chatbot_enqueue():
+    data = request.get_json()
+    if not data or 'message' not in data:
+        return jsonify({'error': 'No message provided.'}), 400
+    user_message = data['message']
+    job_id = str(uuid.uuid4())
+    job = {'job_id': job_id, 'message': user_message}
+    chatbot_job_queue.append(job)
+    chatbot_pending[job_id] = job
+    return jsonify({'job_id': job_id})
+
+@app.route('/chatbot/result/<job_id>', methods=['GET'])
+def chatbot_result(job_id):
+    result = chatbot_results.get(job_id)
+    if result:
+        return jsonify(result)
+    elif job_id in chatbot_pending:
+        return jsonify({'status': 'pending'})
+    else:
+        return jsonify({'error': 'Job not found'}), 404
+
+@app.route('/chatbot/next', methods=['GET'])
+def chatbot_next():
+    if chatbot_job_queue:
+        job = chatbot_job_queue.popleft()
+        return jsonify({'job_id': job['job_id'], 'message': job['message']})
+    else:
+        return jsonify({'status': 'no_jobs'})
+
+@app.route('/chatbot/submit', methods=['POST'])
+def chatbot_submit():
+    data = request.get_json()
+    job_id = data.get('job_id')
+    reply = data.get('reply')
+    logprobs = data.get('logprobs')
+    if not job_id or reply is None:
+        return jsonify({'error': 'Missing job_id or reply'}), 400
+    chatbot_results[job_id] = {'reply': reply, 'logprobs': logprobs}
+    chatbot_pending.pop(job_id, None)
+    return jsonify({'status': 'ok'})
 
 @sock.route('/sdr')
 def sdr_socket(ws):
