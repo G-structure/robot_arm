@@ -3,133 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🤖 Robot Arm Camera Control</title>
+    <title>ｌａｙｅｒ：ｒｏｂｏｔ</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js"
+            }
+        }
+    </script>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 Robot Arm Camera Control</h1>
-            <p>Live camera feed and control interface</p>
+            <h1>RoArm-M2 Control Interface</h1>
+            <p>Interface layer active. All you have to do is connect.</p>
         </div>
         
-        <div class="main-content">
-            <div class="camera-section">
-                <h2 class="camera-title">📹 Live Camera Feed</h2>
-                <div class="camera-container">
-                    <img src="/video_feed" class="camera-feed" alt="Robot Arm Camera Feed">
-                    <div class="camera-overlay">
-                        <div id="camera-status">● LIVE</div>
+        <div class="main-layout">
+            <div class="visuals-container">
+                <div class="card visual-card" id="camera-card">
+                    <h2 class="card-title">//: LIVE FEED</h2>
+                    <div class="camera-container">
+                        <img src="/video_feed" class="camera-feed" alt="Robot Arm Camera Feed">
+                        <div class="camera-overlay">
+                            <div id="camera-status"><span class="blink">●</span> LIVE</div>
+                            <div id="camera-timestamp">Present Day. Present Time.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card visual-card" id="model-card">
+                    <h2 class="card-title">//: 3D RENDER</h2>
+                    <div id="robot-container-3d" class="robot-diagram-container">
+                        <!-- three.js canvas will be inserted here -->
                     </div>
                 </div>
             </div>
-            
-            <div class="control-panel">
-                 <div class="card">
-                    <h2>Direct Control</h2>
-                    <div class="control-section">
-                        <h3>Angle Control (Joints)</h3>
-                        <div class="joint-controls">
-                            <!-- Joint 1: Base -->
-                            <div class="control-group">
-                                <label>Base</label>
-                                <div class="feedback" id="angle-b">0.00</div>
-                                <div class="buttons">
-                                    <button class="control-btn" data-mode="angle" data-axis="1" data-cmd="1">L</button>
-                                    <button class="control-btn" data-mode="angle" data-axis="1" data-cmd="2">R</button>
+
+            <div class="controls-container">
+                <div class="controls-column">
+                    <div class="card">
+                        <h2 class="card-title">//: DIRECT CONTROL</h2>
+                        <div class="control-section">
+                            <h3>Joint Angle Control</h3>
+                            <div class="joint-controls">
+                                <!-- Joint 1: Base -->
+                                <div class="control-group">
+                                    <label for="angle-b-slider">Base</label>
+                                    <input type="range" id="angle-b-slider" class="slider" min="-90" max="90" value="0" data-joint="base">
+                                    <div class="feedback" id="angle-b">0.0°</div>
+                                    <div class="buttons">
+                                        <button class="control-btn" data-mode="angle" data-axis="1" data-cmd="1">L</button>
+                                        <button class="control-btn" data-mode="angle" data-axis="1" data-cmd="2">R</button>
+                                    </div>
                                 </div>
-                            </div>
-                            <!-- Joint 2: Shoulder -->
-                            <div class="control-group">
-                                <label>Shoulder</label>
-                                <div class="feedback" id="angle-s">0.00</div>
-                                <div class="buttons">
-                                    <button class="control-btn" data-mode="angle" data-axis="2" data-cmd="1">D</button>
-                                    <button class="control-btn" data-mode="angle" data-axis="2" data-cmd="2">U</button>
+                                <!-- Joint 2: Shoulder -->
+                                <div class="control-group">
+                                    <label for="angle-s-slider">Shoulder</label>
+                                    <input type="range" id="angle-s-slider" class="slider" min="-90" max="90" value="45" data-joint="shoulder">
+                                    <div class="feedback" id="angle-s">45.0°</div>
+                                    <div class="buttons">
+                                        <button class="control-btn" data-mode="angle" data-axis="2" data-cmd="1">D</button>
+                                        <button class="control-btn" data-mode="angle" data-axis="2" data-cmd="2">U</button>
+                                    </div>
                                 </div>
-                            </div>
-                            <!-- Joint 3: Elbow -->
-                            <div class="control-group">
-                                <label>Elbow</label>
-                                <div class="feedback" id="angle-e">0.00</div>
-                                <div class="buttons">
-                                    <button class="control-btn" data-mode="angle" data-axis="3" data-cmd="1">D</button>
-                                    <button class="control-btn" data-mode="angle" data-axis="3" data-cmd="2">U</button>
+                                <!-- Joint 3: Elbow -->
+                                <div class="control-group">
+                                    <label for="angle-e-slider">Elbow</label>
+                                    <input type="range" id="angle-e-slider" class="slider" min="-90" max="90" value="90" data-joint="elbow">
+                                    <div class="feedback" id="angle-e">90.0°</div>
+                                    <div class="buttons">
+                                        <button class="control-btn" data-mode="angle" data-axis="3" data-cmd="1">D</button>
+                                        <button class="control-btn" data-mode="angle" data-axis="3" data-cmd="2">U</button>
+                                    </div>
                                 </div>
-                            </div>
-                            <!-- Joint 4: Hand -->
-                            <div class="control-group">
-                                <label>Hand</label>
-                                <div class="feedback" id="angle-h">0.00</div>
-                                <div class="buttons">
-                                    <button class="control-btn" data-mode="angle" data-axis="4" data-cmd="1">H+</button>
-                                    <button class="control-btn" data-mode="angle" data-axis="4" data-cmd="2">H-</button>
+                                <!-- Joint 4: Hand -->
+                                <div class="control-group">
+                                    <label for="angle-h-slider">Hand</label>
+                                    <input type="range" id="angle-h-slider" class="slider" min="-90" max="90" value="0" data-joint="hand">
+                                    <div class="feedback" id="angle-h">0.0°</div>
+                                    <div class="buttons">
+                                        <button class="control-btn" data-mode="angle" data-axis="4" data-cmd="1">H+</button>
+                                        <button class="control-btn" data-mode="angle" data-axis="4" data-cmd="2">H-</button>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="control-section">
-                        <h3>Coordinate Control (XYZ)</h3>
-                        <div class="coord-controls">
-                            <!-- X -->
-                            <div class="control-group">
-                                <label>X</label>
-                                <div class="feedback" id="coord-x">0.00</div>
-                                <div class="buttons">
-                                    <button class="control-btn" data-mode="coord" data-axis="1" data-cmd="2">-</button>
-                                    <button class="control-btn" data-mode="coord" data-axis="1" data-cmd="1">+</button>
-                                </div>
-                            </div>
-                            <!-- Y -->
-                            <div class="control-group">
-                                <label>Y</label>
-                                <div class="feedback" id="coord-y">0.00</div>
-                                <div class="buttons">
-                                    <button class="control-btn" data-mode="coord" data-axis="2" data-cmd="2">-</button>
-                                    <button class="control-btn" data-mode="coord" data-axis="2" data-cmd="1">+</button>
-                                </div>
-                            </div>
-                            <!-- Z -->
-                            <div class="control-group">
-                                <label>Z</label>
-                                <div class="feedback" id="coord-z">0.00</div>
-                                <div class="buttons">
-                                    <button class="control-btn" data-mode="coord" data-axis="3" data-cmd="2">-</button>
-                                    <button class="control-btn" data-mode="coord" data-axis="3" data-cmd="1">+</button>
-                                </div>
-                            </div>
-                            <!-- Tool -->
-                            <div class="control-group">
-                                <label>Tool</label>
-                                <div class="feedback" id="coord-t">0.00</div>
-                                <div class="buttons">
-                                    <button class="control-btn" data-mode="coord" data-axis="4" data-cmd="2">-</button>
-                                    <button class="control-btn" data-mode="coord" data-axis="4" data-cmd="1">+</button>
+                                <!-- Gripper -->
+                                <div class="control-group">
+                                    <label for="angle-g-slider">Gripper</label>
+                                    <input type="range" id="angle-g-slider" class="slider" min="0" max="30" value="15" data-joint="gripper">
+                                    <div class="feedback" id="angle-g">15.0</div>
                                 </div>
                             </div>
                         </div>
+                        <div class="control-section">
+                            <h3>Coordinate Position Control (XYZ)</h3>
+                            <div class="coord-controls">
+                                <!-- X -->
+                                <div class="control-group">
+                                    <label>X</label>
+                                    <div class="feedback" id="coord-x">0.00</div>
+                                    <div class="buttons">
+                                        <button class="control-btn" data-mode="coord" data-axis="1" data-cmd="2">-</button>
+                                        <button class="control-btn" data-mode="coord" data-axis="1" data-cmd="1">+</button>
+                                    </div>
+                                </div>
+                                <!-- Y -->
+                                <div class="control-group">
+                                    <label>Y</label>
+                                    <div class="feedback" id="coord-y">0.00</div>
+                                    <div class="buttons">
+                                        <button class="control-btn" data-mode="coord" data-axis="2" data-cmd="2">-</button>
+                                        <button class="control-btn" data-mode="coord" data-axis="2" data-cmd="1">+</button>
+                                    </div>
+                                </div>
+                                <!-- Z -->
+                                <div class="control-group">
+                                    <label>Z</label>
+                                    <div class="feedback" id="coord-z">0.00</div>
+                                    <div class="buttons">
+                                        <button class="control-btn" data-mode="coord" data-axis="3" data-cmd="2">-</button>
+                                        <button class="control-btn" data-mode="coord" data-axis="3" data-cmd="1">+</button>
+                                    </div>
+                                </div>
+                                <!-- Tool -->
+                                <div class="control-group">
+                                    <label>Tool</label>
+                                    <div class="feedback" id="coord-t">0.00</div>
+                                    <div class="buttons">
+                                        <button class="control-btn" data-mode="coord" data-axis="4" data-cmd="2">-</button>
+                                        <button class="control-btn" data-mode="coord" data-axis="4" data-cmd="1">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="control-section">
+                            <h3>System Functions</h3>
+                            <div class="system-controls">
+                                <button class="btn" id="btn-init">Initialize Position</button>
+                                <button class="btn" id="btn-torque-on">Torque ON</button>
+                                <button class="btn" id="btn-torque-off">Torque OFF</button>
+                                <button class="btn" id="btn-led-on">LED ON</button>
+                                <button class="btn" id="btn-led-off">LED OFF</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="control-section">
-                        <h3>System</h3>
-                        <div class="system-controls">
-                            <button class="btn" id="btn-init">Initialize Position</button>
-                            <button class="btn" id="btn-torque-on">Torque ON</button>
-                            <button class="btn" id="btn-torque-off">Torque OFF</button>
-                             <button class="btn" id="btn-led-on">LED ON</button>
-                            <button class="btn" id="btn-led-off">LED OFF</button>
+                </div>
+                
+                <div class="info-column">
+                    <div class="card">
+                        <h3 class="card-title">//: MANUAL COMMAND</h3>
+                        <div class="manual-command">
+                            <textarea id="json-command" placeholder='{"T":105}'></textarea>
+                            <button class="btn" id="send-json">Send</button>
+                        </div>
+                        <h3>//: FEEDBACK LOG</h3>
+                        <pre id="feedback-box">Robot feedback will appear here.</pre>
+                    </div>
+                    <div class="card">
+                        <h3 class="card-title">//: COMMAND LIBRARY</h3>
+                        <input type="text" id="command-search" placeholder="Search for commands...">
+                        <div id="command-list" class="command-list">
+                            <!-- Commands will be populated by JS -->
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- SDR Section - Preserved from original implementation -->
         <div class="sdr-section">
-            <h2 class="sdr-title">📡 SDR Waterfall</h2>
-            <div class="sdr-container">
-                <canvas id="waterfall"></canvas>
+            <div class="card">
+                <h2 class="card-title">//: SDR WATERFALL</h2>
+                <div class="sdr-container">
+                    <canvas id="waterfall"></canvas>
+                </div>
             </div>
-            <div class="sdr-controls card">
-                <h3>SDR Controls</h3>
+            <div class="card sdr-controls">
+                <h3 class="card-title">//: SDR CONTROLS</h3>
                 <div class="sdr-control-grid">
                     <div class="input-group">
                         <label for="sdr-freq">Center Freq (MHz)</label>
@@ -137,13 +190,28 @@
                     </div>
                     <div class="input-group">
                         <label for="sdr-rate">Sample Rate (MS/s)</label>
-                        <input type="number" id="sdr-rate" value="10">
+                        <input type="number" id="sdr-rate" value="10" min="1" max="15" step="0.5">
                     </div>
                     <div class="input-group">
                         <label for="sdr-gain">Gain (dB)</label>
                         <input type="number" id="sdr-gain" value="20">
                     </div>
-                     <div class="input-group">
+                    <div class="input-group">
+                        <label for="sdr-baseband-bw">Baseband Filter (MHz)</label>
+                        <select id="sdr-baseband-bw">
+                            <option value="0">Auto (Default)</option>
+                            <option value="1750000">1.75 MHz (Min)</option>
+                            <option value="2500000">2.5 MHz</option>
+                            <option value="3500000">3.5 MHz</option>
+                            <option value="5000000">5.0 MHz</option>
+                            <option value="7000000">7.0 MHz</option>
+                            <option value="10000000">10.0 MHz</option>
+                            <option value="14000000">14.0 MHz</option>
+                            <option value="20000000">20.0 MHz</option>
+                            <option value="28000000">28.0 MHz (Max)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
                         <label for="sdr-fft-size">FFT Size</label>
                         <select id="sdr-fft-size">
                             <option value="1024">1024</option>
@@ -152,38 +220,33 @@
                             <option value="8192">8192</option>
                         </select>
                     </div>
+                    <div class="input-group">
+                        <label for="sdr-update-rate">Update Rate (FPS)</label>
+                        <select id="sdr-update-rate">
+                            <option value="5">5 FPS</option>
+                            <option value="10" selected>10 FPS</option>
+                            <option value="15">15 FPS</option>
+                            <option value="20">20 FPS</option>
+                            <option value="30">30 FPS</option>
+                        </select>
+                    </div>
                 </div>
                 <button class="btn" id="sdr-update-settings">Apply Settings</button>
-                 <h3>Spectrum View</h3>
-                 <div class="sdr-control-grid">
+                <div class="sdr-note">
+                    <strong>Note:</strong> Sample rate limited to 15 MSPS due to USB 2.0 bandwidth constraints. Higher rates may cause signal artifacts and harmonics.<br>
+                    <strong>Baseband Filter:</strong> HackRF's anti-aliasing filter. Use "Auto" for best performance, or set manually to match your signal bandwidth. Minimum 1.75 MHz as per <a href="https://hackrf.readthedocs.io/en/latest/sampling_rate.html" target="_blank">HackRF documentation</a>.
+                </div>
+                <h3>//: SPECTRUM VIEW</h3>
+                <div class="sdr-control-grid">
                     <button class="btn btn-secondary" id="sdr-pause">Pause</button>
                     <button class="btn btn-secondary" id="sdr-color">Colormap</button>
                     <button class="btn btn-secondary" id="sdr-max-hold">Max Hold</button>
-                 </div>
-            </div>
-        </div>
-
-        <div class="command-column">
-            <div class="card">
-                <h3>Manual Command</h3>
-                <div class="manual-command">
-                    <textarea id="json-command" placeholder='{"T":105}'></textarea>
-                    <button class="btn" id="send-json">Send</button>
-                </div>
-                <h3>Feedback</h3>
-                <pre id="feedback-box">Robot feedback will appear here.</pre>
-            </div>
-            <div class="card">
-                <h3>Command Library</h3>
-                <input type="text" id="command-search" placeholder="Search for commands...">
-                <div id="command-list" class="command-list">
-                    <!-- Commands will be populated by JS -->
                 </div>
             </div>
         </div>
     </div>
     <script src="{{ url_for('static', filename='colormap.js') }}"></script>
     <script src="{{ url_for('static', filename='spectrum.js') }}"></script>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html> 

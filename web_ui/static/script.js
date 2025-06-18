@@ -60,12 +60,16 @@ async function updateSdrSettings() {
     const sample_rate = parseFloat(document.getElementById('sdr-rate').value) * 1e6;
     const rx_gain = parseInt(document.getElementById('sdr-gain').value, 10);
     const fft_size = parseInt(document.getElementById('sdr-fft-size').value, 10);
+    const update_rate = parseInt(document.getElementById('sdr-update-rate').value, 10);
+    const baseband_filter_bw = parseInt(document.getElementById('sdr-baseband-bw').value, 10);
 
     const settings = {
         center_freq,
         sample_rate,
         rx_gain,
         fft_size,
+        update_rate,
+        baseband_filter_bw,
     };
 
     try {
@@ -93,6 +97,7 @@ async function updateSdrStatus() {
             document.getElementById('sdr-rate').value = data.sample_rate / 1e6;
             document.getElementById('sdr-gain').value = data.rx_gain;
             document.getElementById('sdr-fft-size').value = data.fft_size;
+            document.getElementById('sdr-baseband-bw').value = data.baseband_filter_bw || 0;
             if (spectrum) {
                 spectrum.setCenterHz(data.center_freq);
                 spectrum.setSpanHz(data.sample_rate);
