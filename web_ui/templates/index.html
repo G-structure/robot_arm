@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoArm-M2 Control</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>RoArm-M2 Control Panel</h1>
+        </header>
+        <main class="main-grid">
+            <div class="control-column">
+                <div class="card">
+                    <h2>Direct Control</h2>
+                    <div class="control-section">
+                        <h3>Angle Control (Joints)</h3>
+                        <div class="joint-controls">
+                            <!-- Joint 1: Base -->
+                            <div class="control-group">
+                                <label>Base</label>
+                                <div class="feedback" id="angle-b">0.00</div>
+                                <div class="buttons">
+                                    <button class="control-btn" data-mode="angle" data-axis="1" data-cmd="1">L</button>
+                                    <button class="control-btn" data-mode="angle" data-axis="1" data-cmd="2">R</button>
+                                </div>
+                            </div>
+                            <!-- Joint 2: Shoulder -->
+                            <div class="control-group">
+                                <label>Shoulder</label>
+                                <div class="feedback" id="angle-s">0.00</div>
+                                <div class="buttons">
+                                    <button class="control-btn" data-mode="angle" data-axis="2" data-cmd="1">D</button>
+                                    <button class="control-btn" data-mode="angle" data-axis="2" data-cmd="2">U</button>
+                                </div>
+                            </div>
+                            <!-- Joint 3: Elbow -->
+                            <div class="control-group">
+                                <label>Elbow</label>
+                                <div class="feedback" id="angle-e">0.00</div>
+                                <div class="buttons">
+                                    <button class="control-btn" data-mode="angle" data-axis="3" data-cmd="1">D</button>
+                                    <button class="control-btn" data-mode="angle" data-axis="3" data-cmd="2">U</button>
+                                </div>
+                            </div>
+                            <!-- Joint 4: Hand -->
+                            <div class="control-group">
+                                <label>Hand</label>
+                                <div class="feedback" id="angle-h">0.00</div>
+                                <div class="buttons">
+                                    <button class="control-btn" data-mode="angle" data-axis="4" data-cmd="1">H+</button>
+                                    <button class="control-btn" data-mode="angle" data-axis="4" data-cmd="2">H-</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="control-section">
+                        <h3>Coordinate Control (XYZ)</h3>
+                        <div class="coord-controls">
+                            <!-- X -->
+                            <div class="control-group">
+                                <label>X</label>
+                                <div class="feedback" id="coord-x">0.00</div>
+                                <div class="buttons">
+                                    <button class="control-btn" data-mode="coord" data-axis="1" data-cmd="2">-</button>
+                                    <button class="control-btn" data-mode="coord" data-axis="1" data-cmd="1">+</button>
+                                </div>
+                            </div>
+                            <!-- Y -->
+                            <div class="control-group">
+                                <label>Y</label>
+                                <div class="feedback" id="coord-y">0.00</div>
+                                <div class="buttons">
+                                    <button class="control-btn" data-mode="coord" data-axis="2" data-cmd="2">-</button>
+                                    <button class="control-btn" data-mode="coord" data-axis="2" data-cmd="1">+</button>
+                                </div>
+                            </div>
+                            <!-- Z -->
+                            <div class="control-group">
+                                <label>Z</label>
+                                <div class="feedback" id="coord-z">0.00</div>
+                                <div class="buttons">
+                                    <button class="control-btn" data-mode="coord" data-axis="3" data-cmd="2">-</button>
+                                    <button class="control-btn" data-mode="coord" data-axis="3" data-cmd="1">+</button>
+                                </div>
+                            </div>
+                            <!-- Tool -->
+                            <div class="control-group">
+                                <label>Tool</label>
+                                <div class="feedback" id="coord-t">0.00</div>
+                                <div class="buttons">
+                                    <button class="control-btn" data-mode="coord" data-axis="4" data-cmd="2">-</button>
+                                    <button class="control-btn" data-mode="coord" data-axis="4" data-cmd="1">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="control-section">
+                        <h3>System</h3>
+                        <div class="system-controls">
+                            <button class="btn" id="btn-init">Initialize Position</button>
+                            <button class="btn" id="btn-torque-on">Torque ON</button>
+                            <button class="btn" id="btn-torque-off">Torque OFF</button>
+                             <button class="btn" id="btn-led-on">LED ON</button>
+                            <button class="btn" id="btn-led-off">LED OFF</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="command-column">
+                <div class="card">
+                    <h3>Manual Command</h3>
+                    <div class="manual-command">
+                        <textarea id="json-command" placeholder='{"T":105}'></textarea>
+                        <button class="btn" id="send-json">Send</button>
+                    </div>
+                    <h3>Feedback</h3>
+                    <pre id="feedback-box">Robot feedback will appear here.</pre>
+                </div>
+                <div class="card">
+                    <h3>Command Library</h3>
+                    <input type="text" id="command-search" placeholder="Search for commands...">
+                    <div id="command-list" class="command-list">
+                        <!-- Commands will be populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html> 
