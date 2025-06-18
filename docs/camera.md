@@ -91,81 +91,9 @@ v4l2-ctl --device=/dev/video0 --set-fmt-video=width=1280,height=720
 
 ## Web Interface
 
-### Overview
-The robot arm includes a comprehensive web interface that provides:
-- Live camera streaming
-- Robot arm control
-- System status monitoring
-- Real-time command interface
+The camera feed is primarily accessed through the Robot Arm Web Interface. This provides a live video stream alongside robot control and status panels.
 
-### Accessing the Web Interface
-- **URL**: `http://100.73.250.34:3334`
-- **Local Access**: `http://localhost:3334`
-- **Network Access**: Available on the Pi's Tailscale network
-
-### Starting the Web Server
-```bash
-cd python_example
-source venv/bin/activate
-python3 camera_webui.py
-```
-
-### Web Interface Features
-
-#### 1. Live Camera Feed
-- Real-time video streaming using Motion JPEG
-- 640x480 resolution at 30 FPS
-- Timestamp overlay
-- Automatic fallback on camera errors
-
-#### 2. Robot Control Panel
-- **Robot Configuration**: Set robot arm IP address
-- **Quick Commands**: Pre-defined common commands
-  - Home Position (`{"T":104}`)
-  - Get Status (`{"T":1}`)
-  - Stop (`{"T":2}`)
-  - Reset (`{"T":3}`)
-- **Custom Commands**: Send arbitrary JSON commands
-
-#### 3. System Status
-- Camera status and resolution info
-- Robot connection status
-- Last command sent
-- Last response received
-
-### API Endpoints
-
-The web interface provides several REST API endpoints:
-
-#### Camera Endpoints
-- `GET /video_feed` - Live video stream
-- `GET /camera/info` - Camera status and capabilities
-
-#### Robot Control Endpoints
-- `POST /robot/command` - Send JSON command to robot
-- `GET /robot/status` - Get robot status
-- `POST /robot/config` - Configure robot IP
-
-### Example API Usage
-
-#### Get Camera Info
-```bash
-curl http://100.73.250.34:3334/camera/info
-```
-
-#### Send Robot Command
-```bash
-curl -X POST http://100.73.250.34:3334/robot/command \
-     -H "Content-Type: application/json" \
-     -d '{"command": "{\"T\":1}"}'
-```
-
-#### Configure Robot IP
-```bash
-curl -X POST http://100.73.250.34:3334/robot/config \
-     -H "Content-Type: application/json" \
-     -d '{"ip": "192.168.1.100"}'
-```
+For detailed information on the web interface, its features, and API endpoints, please see the dedicated [Robot Arm UI Documentation](./ui.md).
 
 ## Performance Considerations
 
