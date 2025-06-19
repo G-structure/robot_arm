@@ -707,59 +707,100 @@ function updateSliderValues() {
 }
 
 // --- Chatbot Logic ---
+function displayTokenData(tokenData) {
+    const tokenDetailsWindow = document.getElementById('chatbot-token-details-window');
+    const selectedTokenEl = document.getElementById('selected-token');
+    const sidechannelTokenEl = document.getElementById('sidechannel-token');
+    const layerGridEl = document.getElementById('token-layer-grid');
+
+    if (!tokenDetailsWindow || !selectedTokenEl || !sidechannelTokenEl || !layerGridEl) return;
+
+    // Make the window visible
+    tokenDetailsWindow.style.display = 'block';
+
+    // Update token text
+    selectedTokenEl.textContent = JSON.stringify(tokenData.token);
+    sidechannelTokenEl.textContent = JSON.stringify(tokenData.sidechannel_token);
+
+    // Clear and build the layer grid
+    layerGridEl.innerHTML = '';
+    
+    if (tokenData.expert_logprobs_per_layer && Array.isArray(tokenData.expert_logprobs_per_layer)) {
+        tokenData.expert_logprobs_per_layer.forEach(layerData => {
+            const cell = document.createElement('div');
+            cell.className = 'layer-cell';
+            
+            const bit = tokenData.expert_pattern[layerData.layer];
+            const chosenGroup = bit === '0' ? 'g0' : 'g1';
+
+            cell.innerHTML = `
+                <div class="layer-label">L${layerData.layer}</div>
+                <div class="layer-bit chosen-${chosenGroup}">${bit}</div>
+                <div class="layer-probs">
+                    <div class="prob g0 ${chosenGroup === 'g0' ? 'chosen' : ''}" style="width: ${layerData.g0_prob * 100}%"></div>
+                    <div class="prob g1 ${chosenGroup === 'g1' ? 'chosen' : ''}" style="width: ${layerData.g1_prob * 100}%"></div>
+                </div>
+            `;
+            layerGridEl.appendChild(cell);
+        });
+    }
+}
+
 function appendChatbotMessage(text, sender, logprobs, expert_groups) {
     const messagesDiv = document.getElementById('chatbot-messages');
     if (!messagesDiv) return;
+
     const msg = document.createElement('div');
     msg.className = 'chatbot-message ' + sender;
-    msg.textContent = text;
+
+    // Clear previous token highlights
+    document.querySelectorAll('.token.active').forEach(el => el.classList.remove('active'));
+
+    if (sender === 'bot' && Array.isArray(expert_groups) && expert_groups.length > 0) {
+        // Create interactive tokens
+        expert_groups.forEach((tokenData, index) => {
+            const tokenSpan = document.createElement('span');
+            tokenSpan.className = 'token';
+            // Use pre-wrap to preserve spaces, especially leading ones
+            tokenSpan.style.whiteSpace = 'pre-wrap'; 
+            tokenSpan.textContent = tokenData.token;
+            
+            tokenSpan.addEventListener('click', (event) => {
+                // Remove active class from other tokens in the same message
+                event.currentTarget.parentElement.querySelectorAll('.token.active').forEach(el => el.classList.remove('active'));
+                // Add active class to clicked token
+                event.currentTarget.classList.add('active');
+                displayTokenData(tokenData);
+            });
+
+            // Make first token active by default
+            if (index === 0) {
+                tokenSpan.classList.add('active');
+                displayTokenData(tokenData);
+            }
+
+            msg.appendChild(tokenSpan);
+        });
+    } else {
+        msg.textContent = text;
+    }
+
     messagesDiv.appendChild(msg);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    // If logprobs are present and sender is bot, update the logprobs window
-    if (sender === 'bot') {
-        const logprobsWindow = document.getElementById('chatbot-logprobs-window');
-        if (logprobsWindow) {
-            if (Array.isArray(logprobs)) {
-                logprobsWindow.textContent = 'logprobs: [' + logprobs.map(x => x.toFixed(3)).join(', ') + ']';
-            } else {
-                logprobsWindow.textContent = 'logprobs: (not available)';
-            }
+
+    // Handle logprobs display (optional)
+    const logprobsWindow = document.getElementById('chatbot-logprobs-window');
+    if (logprobsWindow) {
+        if (sender === 'bot' && Array.isArray(logprobs)) {
+            logprobsWindow.textContent = 'logprobs: [' + logprobs.map(x => x.toFixed(3)).join(', ') + ']';
+        } else if (sender === 'bot') {
+            logprobsWindow.textContent = 'logprobs: (not available)';
         }
     }
-    // For testing: always show a hardcoded expert_groups array in the bits window after every bot reply
-    if (sender === 'bot') {
-        const bitsWindow = document.getElementById('chatbot-bits-window');
-        if (bitsWindow) {
-            let displayGroups;
-            if (Array.isArray(expert_groups) && expert_groups.length === 16) {
-                displayGroups = expert_groups;
-            } else {
-                console.warn('expert_groups missing or not length 16:', expert_groups);
-                displayGroups = Array(16).fill(-1);
-            }
-            // Create label row
-            const labelRow = document.createElement('div');
-            labelRow.className = 'chatbot-bits-label-row';
-            for (let i = 16; i <= 31; i++) {
-                const label = document.createElement('div');
-                label.textContent = i;
-                labelRow.appendChild(label);
-            }
-            // Create box row
-            const boxRow = document.createElement('div');
-            boxRow.className = 'chatbot-bits-box-row';
-            for (let i = 0; i < 16; i++) {
-                const box = document.createElement('div');
-                box.className = 'chatbot-bit-box';
-                box.textContent = displayGroups[i];
-                boxRow.appendChild(box);
-            }
-            // Clear and append
-            bitsWindow.innerHTML = '';
-            bitsWindow.appendChild(labelRow);
-            bitsWindow.appendChild(boxRow);
-        }
-    }
+    
+    // Hide the old bits window if it's still there
+    const bitsWindow = document.getElementById('chatbot-bits-window');
+    if(bitsWindow) bitsWindow.style.display = 'none';
 }
 
 async function sendChatbotMessage() {

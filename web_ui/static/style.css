@@ -697,6 +697,120 @@ textarea#json-command:focus {
     opacity: 0.92;
 }
 
+/* Token visualization styles */
+.token {
+    display: inline;
+    cursor: pointer;
+    padding: 2px 1px;
+    margin: 0 1px;
+    border-radius: 2px;
+    transition: all 0.2s ease;
+    font-family: 'Share Tech Mono', monospace;
+    border: 1px solid transparent;
+}
+
+.token:hover {
+    background: rgba(0, 255, 255, 0.1);
+    border-color: rgba(0, 255, 255, 0.3);
+}
+
+.token.active {
+    background: rgba(0, 255, 255, 0.2);
+    border-color: #00ffff;
+    box-shadow: 0 0 3px rgba(0, 255, 255, 0.5);
+}
+
+#chatbot-token-details-window {
+    background: rgba(0, 15, 30, 0.4);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    border-radius: 4px;
+    margin-top: 8px;
+    padding: 12px;
+    font-family: 'Share Tech Mono', monospace;
+}
+
+.token-info-header {
+    margin-bottom: 12px;
+}
+
+.token-info {
+    margin-bottom: 6px;
+    font-size: 0.9em;
+    color: #ccc;
+}
+
+.token-info strong {
+    color: #00ffff;
+}
+
+#token-layer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+    gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.layer-cell {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 255, 255, 0.1);
+    border-radius: 3px;
+    padding: 6px 4px;
+    text-align: center;
+    font-size: 0.8em;
+}
+
+.layer-label {
+    font-size: 0.7em;
+    color: #aaa;
+    margin-bottom: 2px;
+}
+
+.layer-bit {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 4px;
+    color: #fff;
+}
+
+.layer-bit.chosen-g0 {
+    color: #ff6b6b; /* Red for group 0 */
+}
+
+.layer-bit.chosen-g1 {
+    color: #4ecdc4; /* Teal for group 1 */
+}
+
+.layer-probs {
+    display: flex;
+    height: 12px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.prob {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.prob.g0 {
+    background: rgba(255, 107, 107, 0.6); /* Semi-transparent red */
+}
+
+.prob.g1 {
+    background: rgba(78, 205, 196, 0.6); /* Semi-transparent teal */
+}
+
+.prob.chosen {
+    opacity: 1;
+    box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.prob:not(.chosen) {
+    opacity: 0.4;
+}
+
 .chatbot-bits-window {
     margin-top: 8px;
     margin-bottom: 16px;

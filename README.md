@@ -42,19 +42,65 @@ A web interface for controlling a robot arm and viewing its camera feed.
 - SDR spectrum analyzer with waterfall display
 - Command library with pre-defined actions
 - Status monitoring and feedback logging
+- Chatbot interface for interacting with a model worker
 
-## Setup
+## Running the Application
 
-```bash
-# Install dependencies
-uv sync
+To run the full application with chatbot functionality, you need to start two separate components: the **Web UI Server** and the **Chatbot Worker**.
 
-# Run the server
-uv run python -m web_ui.server
+### 1. Start the Web UI Server
 
-# Access the interface
-open http://localhost:5000
-```
+The server hosts the web interface, streams the camera feed, and manages the chatbot job queue.
+
+1.  **Navigate to the `robot_arm` directory.**
+
+2.  **Install dependencies using `uv`**:
+    If you haven't already, this command creates a virtual environment in `.venv` and installs all required packages from `pyproject.toml`.
+    ```bash
+    uv sync
+    ```
+
+3.  **Run the server**:
+    ```bash
+    uv run start-robot-ui
+    ```
+    The web interface will now be accessible at `http://localhost:5000`.
+
+### 2. Start the Chatbot Worker
+
+The chatbot worker is a separate Python script that polls the web server for new messages, processes them, and submits the results. The provided example client simulates a model's response.
+
+1.  **Navigate to the `moe_channel` directory**:
+    This component is in a different project folder.
+    ```bash
+    cd ../GPU-side-channels/moe_channel
+    ```
+
+2.  **Install dependencies for the client**:
+    This project has its own set of dependencies defined in its `pyproject.toml`.
+    ```bash
+    uv sync
+    ```
+
+3.  **Configure the server IP (IMPORTANT)**:
+    Before running the client, you must configure it to point to the machine running the Web UI server. Open the client file: `src/moe_channel/simple_python_client.py`.
+
+    Modify the `SERVER` variable to match your server's IP address:
+    ```python
+    # Change this to your server's IP address
+    SERVER = "http://<YOUR_SERVER_IP>:5000" 
+    ```
+
+4.  **Run the chatbot client**:
+    The client now loads the trained steganography model to generate responses.
+    ```bash
+    # Run with default model path
+    uv run client
+
+    # Or specify a path to your model checkpoint
+    uv run client -- --model_path /path/to/your/best_model
+    ```
+    The client will load the model, start polling the server for jobs, and when it receives one, it will generate a response while also extracting the hidden data from the expert layer usage. You can now use the chatbot feature in the web UI to interact with your trained model.
 
 ## Usage
 
@@ -64,6 +110,7 @@ open http://localhost:5000
 4. **System Functions**: Initialize, torque control, LED control
 5. **SDR Waterfall**: Real-time spectrum analysis
 6. **Command Interface**: Send custom JSON commands
+7. **Chatbot**: Interact with the connected model worker.
 
 ## Configuration
 
@@ -103,37 +150,14 @@ This project is managed with `uv`.
 Clone the repository and install the dependencies using `uv`:
 
 ```bash
+# From the robot_arm directory
 uv sync
 ```
-
 This will create a virtual environment in `.venv` and install all required packages.
 
-### Running the Web UI
+### Running the Web UI and Chatbot
 
-To start the web interface, run the following command from the project root:
-
-```bash
-uv run start-robot-ui
-```
-
-The application will be available at [http://localhost:5000](http://localhost:5000).
-
-### Running the MoE Backend
-
-The project includes a new MoE (Mixture of Experts) backend for real-time streaming of expert selection data during model inference:
-
-```bash
-# Start the MoE backend server
-uv run start-moe-backend
-
-# Interactive CLI chat with expert visualization
-uv run moe-cli chat
-
-# Health check
-uv run moe-cli health
-```
-
-See [`moe_backend/README.md`](moe_backend/README.md) for detailed documentation.
+The full system requires two components running simultaneously. Follow the steps in the **[Running the Application](#running-the-application)** section above for detailed instructions.
 
 ## Command Line Options
 
